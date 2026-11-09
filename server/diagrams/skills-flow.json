@@ -1,0 +1,39 @@
+{
+  "schema": "diagram-studio/1",
+  "id": "skills-flow",
+  "title": "How a host discovers, reads and verifies an MCP skill",
+  "lede": "The host model in this lab (the verifier) talks to a skills server. Nothing is read until a file is needed, every file is checked against the manifest, and approvals are bound to the set of files. Simulated: the server is in this app, nothing leaves the machine.",
+  "groups": {
+    "person": { "label": "The person", "color": "green" },
+    "host": { "label": "Host (verifier)", "color": "blue" },
+    "server": { "label": "Skills server", "color": "red" },
+    "store": { "label": "Files", "color": "grey" },
+    "model": { "label": "Model context", "color": "dark" }
+  },
+  "nodes": [
+    { "id": "person", "label": "Person", "group": "person", "sub": ["approves skill, scripts, allowed-tools"], "x": 0, "y": 20 },
+    { "id": "host", "label": "Host verifier", "group": "host", "sub": ["size, digest, frontmatter", "approvals bound to the file set"], "x": 260, "y": 20 },
+    { "id": "server", "label": "Skills server", "group": "server", "sub": ["io.modelcontextprotocol/skills"], "x": 640, "y": 20 },
+    { "id": "files", "label": "Skill files", "group": "store", "sub": ["SKILL.md, references, scripts"], "x": 640, "y": 200 },
+    { "id": "context", "label": "Model context", "group": "model", "sub": ["content tagged untrusted, with its origin"], "x": 260, "y": 200 },
+    { "id": "approvals", "label": "Approval store", "group": "host", "sub": ["in memory, keyed by the resources set"], "x": 0, "y": 200 }
+  ],
+  "edges": [
+    { "source": "host", "target": "server", "label": "discover" },
+    { "source": "host", "target": "server", "label": "list, get" },
+    { "source": "host", "target": "server", "label": "read (when needed)" },
+    { "source": "server", "target": "files", "label": "bytes" },
+    { "source": "host", "target": "approvals", "label": "bind to manifest" },
+    { "source": "person", "target": "host", "label": "approve" },
+    { "source": "host", "target": "context", "label": "verified content" }
+  ],
+  "steps": [
+    { "title": "Connect", "what": "The host asks which extensions the server declares. The skills extension and the resources capability must both be declared; if resources is missing, the host calls no skills method.", "why": "A client must not call skills methods on a server that did not declare the extension.", "edges": [0] },
+    { "title": "List: no file is read", "what": "skills/list returns each skill's frontmatter and its manifest: every file's URI, size and SHA-256 digest. The listing may be partial.", "why": "The retrieval counter on the Skills tab stays at 0.", "edges": [1] },
+    { "title": "Get one skill by URI", "what": "skills/get answers for any skill the server serves, even one the listing left out. Still no file is read.", "why": "A partial listing is not proof that a skill does not exist.", "edges": [1] },
+    { "title": "Read a file when it is needed", "what": "resources/read fetches one file. The host checks the byte size and the digest against the manifest, and for SKILL.md compares the frontmatter field by field.", "why": "A digest match is not a trust boundary: the digests come from the same server.", "edges": [2, 3] },
+    { "title": "Approve", "what": "The person approves the skill, and separately scripts and allowed-tools. The approval is bound to the exact set of files.", "why": "Approving scripts or allowed-tools never comes from the skill's own text.", "edges": [5, 4] },
+    { "title": "The manifest changes: approval revoked", "what": "If a later skills/get lists different files or digests, the approval no longer matches and is dropped. Returning to the old manifest does not bring it back.", "why": "Run the swap in the Approvals tab.", "edges": [1, 4] },
+    { "title": "Load into context, tagged untrusted", "what": "Verified content enters the model context tagged with its origin server. This lab never executes anything; a real host would need a per-skill approval before it ran a script.", "why": "Skill text is untrusted model input.", "edges": [6] }
+  ]
+}

@@ -1,0 +1,21 @@
+# mcp-skills-LAB
+
+Tester-tier standalone app (catalog id TBD, port 7807), Step 2 of 3 (core + web UI done; integration is Step 3). Tests the MCP Skills extension `io.modelcontextprotocol/skills` (SEP-2640, revision 2026-07-28): a skills server (Mock or Real), a hostile catalog, and a host verifier. Rules: `~/Development/STANDALONE-RULES.md`.
+
+- Run: `npm ci && npm run build && npm start` (http://127.0.0.1:7807). Test: `npm test` (`node --test test/*.test.js` then vitest in `web`, Node 26; use `air-test`). Browser check: `npm run build && npm run e2e` (starts its own labs on `test/fixtures/real-skills/`, plus a test-only mutant lab for the FAIL path; or `BASE_URL=... npm run e2e` against the container started with `docker-compose.e2e.yml`). Content pack `npm run content-pack`; talk track `npm run talk-track` (a test fails on drift); UI standard `npm run check-ui`. Preflight `npm run doctor`. Reset `npm run reset`. Docker: `docker compose up --build -d` (OrbStack, 127.0.0.1 only).
+- Layout: `server/src/app.js` (Web-standard router + node:http adapter), `catalog/` (mockSkills, real, manager = the Mock/Real mode), `hostile/` (cases = the catalog, server = honest SDK server + wire lie), `verifier/` (host.js = the host and its named checks, drive.js = scripted flows + verdicts, findings.js, frontmatter.js), `safety.js`, `netguard.js`, `doctor.js`, `health.js`, `session.js` (one host verifier per workspace, behind `/api/browse/*`, with wire capture), `static.js` (serves `web/dist`, CSP), `diagramData.js` + `server/diagrams/*.json` (diagram-studio/1), `talkTrack.js` (data for the page, presenter mode and `docs/talk-track.md`). `web/src`: `App.jsx` (shell, hash tabs, banner), `pages/*`, `FlowDiagram.jsx` (ReactFlow), `components/*`, `banner.js`, `styles/standalone-ui.css` (vendored, never edit).
+- SDK: `@modelcontextprotocol/{server,client,core}` pinned EXACT at 2.4.0 (+ zod 4.6.7). One `createMcpHandler(..., { legacy: 'stateless' })` serves both eras. Never "upgrade" without rerunning every test: the extension API is `@experimental`.
+- The rules that bite:
+  - Frontmatter is parsed ONLY by the SDK (via `sdkFrontmatter.js`); never write a look-alike YAML parser (the differential test fails if host and SDK disagree). It uses two private SDK members, which is why the SDK is pinned exactly.
+  - The banner (simulated, UNVERIFIED, MEASURED gateway fact) is the first element of every tab and stays in presenter mode; `web/src/banner.js` and `server/src/spec.js` carry the same MEASURED words (a test compares them). Say "endpoint" or "P1 Privilege Agent App" (the owner's naming rule), not the old word for it.
+  - Skill text is rendered as text only (no innerHTML, no markdown to HTML). The page never speaks MCP; the server-side verifier session does.
+  - Rule 19: `/api/mode` takes exactly `{source: "mock"|"real"}`. Hostile is a target choice in the Skills tab, not a mode.
+  - App CSS: tokens only, breakpoints 600 and 900 only, no `!important`, no italics, no purple; the shared stylesheet is re-vendored from GitHub origin/main and pinned (`scripts/check-ui-standard.sh --pin`), never edited.
+  - Nothing here executes a skill; the verifier has no exec path (a test greps for it). Do not add one.
+  - Zero outbound calls (netguard + a test asserting zero attempts). Hosts in shipped text are `.example` / `.invalid` only, plus the spec links.
+  - Real mode reads `SKILLS_DIR` and never copies it into the repo. The owner points it at a folder; tests use a temp fixture they build themselves.
+  - Every hostile case names a `guardedBy` check; a mutation test switches it off and requires the case to stop passing. A new case needs: attack, MUST text, expected verdict, driver in `verifier/drive.js`, README row.
+  - Spec claims come from pages actually read (see README "What is verified"); anything else is UNVERIFIED. URI-containment and the limit refusals are LAB POLICY, labelled so.
+  - No EC key generation, no `eval`, no `process.env.MODE`, no k8s code, no `.env` loader.
+  - Mock content is synthetic and customer-neutral. Never copy skill text from AI-DEMO2 or any other repo.
+- Never commit `.env`. No AI attribution anywhere (no Co-Authored-By, no "Generated with" line). GitHub account is `curtismu7` only; no remote exists yet (repo creation needs owner approval).

@@ -1,0 +1,36 @@
+{
+  "name": "mcp-skills-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP Skills extension LAB (io.modelcontextprotocol/skills, SEP-2640): a skills server, a hostile catalog and a host verifier. Simulated: nothing leaves the machine.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "start": "node server/src/index.js",
+    "test": "node --test test/*.test.js && npm test -w web",
+    "build": "npm run build -w web",
+    "doctor": "node scripts/doctor.mjs",
+    "reset": "node scripts/reset.mjs",
+    "prepare": "git config core.hooksPath .githooks || true",
+    "talk-track": "node scripts/build-talk-track.mjs",
+    "content-pack": "node scripts/build-content-pack.mjs && node scripts/validate-content-pack.mjs",
+    "e2e": "node scripts/e2e.mjs",
+    "check-ui": "bash scripts/check-ui-standard.sh"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/client": "2.4.0",
+    "@modelcontextprotocol/core": "2.4.0",
+    "@modelcontextprotocol/server": "2.4.0",
+    "zod": "4.6.7"
+  },
+  "workspaces": [
+    "web"
+  ],
+  "devDependencies": {
+    "ajv": "8.20.0",
+    "playwright": "1.64.1"
+  }
+}

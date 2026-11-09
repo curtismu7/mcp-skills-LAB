@@ -1,0 +1,9 @@
+# Used by the browser check against the container: mounts the committed synthetic fixtures read-only as the Real-mode skills folder.
+#   docker compose -f docker-compose.yml -f docker-compose.e2e.yml up --build -d
+#   BASE_URL=http://127.0.0.1:7807 npm run e2e
+services:
+  mcp-skills-lab:
+    environment:
+      SKILLS_DIR: /skills
+    volumes:
+      - ./test/fixtures/real-skills:/skills:ro

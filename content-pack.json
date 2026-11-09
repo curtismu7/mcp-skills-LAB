@@ -1,0 +1,571 @@
+{
+  "schema": "demo-content-pack/1",
+  "id": "mcp-skills-lab",
+  "title": "MCP Skills LAB",
+  "version": "0.1.0",
+  "demo": {
+    "id": "mcp-skills-lab",
+    "name": "MCP Skills LAB",
+    "catalog": "D999",
+    "baseUrl": "http://127.0.0.1:7807",
+    "doctor": "/api/health",
+    "tags": [
+      "mcp",
+      "skills",
+      "sep-2640",
+      "host-verification",
+      "hostile",
+      "mock"
+    ]
+  },
+  "glossary": [
+    {
+      "id": "skill",
+      "term": "Skill",
+      "definition": "A folder with a SKILL.md (YAML frontmatter with name and description) and optional files, exposed over MCP resources at skill://<skill-path>/<file>. The last segment of the skill path must equal the frontmatter name."
+    },
+    {
+      "id": "manifest",
+      "term": "Manifest",
+      "definition": "The resources array of a skill entry: every file exactly once (including SKILL.md) with its URI, SHA-256 digest and byte size. A host reads only URIs that are in it."
+    },
+    {
+      "id": "digest",
+      "term": "Digest and size",
+      "definition": "The sha256:<64 hex> digest and byte size in the manifest. A host checks both on every file it fetches and does not use a file that fails. A digest match is not a trust boundary: the digests are unsigned and come from the same server."
+    },
+    {
+      "id": "frontmatter",
+      "term": "Frontmatter comparison",
+      "definition": "A host parses the fetched SKILL.md frontmatter and compares it field by field with the entry; any difference means the skill is not loaded. This lab uses the SDK's own parser for it."
+    },
+    {
+      "id": "approval-binding",
+      "term": "Content-bound approval",
+      "definition": "An approval is bound to the resources set (every URI and digest). A changed set revokes it, and returning to the old set does not bring it back."
+    },
+    {
+      "id": "allowed-tools",
+      "term": "allowed-tools",
+      "definition": "A frontmatter field asking for tool permissions. For a skill that came over MCP it is ignored unless the user explicitly approves that grant; hooks are ignored or gated the same way."
+    },
+    {
+      "id": "name-collision",
+      "term": "Name collision",
+      "definition": "Names are labels, not identifiers. Two skills can share a name (one server or two); a host disambiguates them and does not let one silently replace the other."
+    },
+    {
+      "id": "dynamic-skill",
+      "term": "Dynamic skill",
+      "definition": "An entry with resources: \"dynamic\". Its files cannot be pinned by digest, so a host may decline it and cannot bind an approval to it."
+    },
+    {
+      "id": "untrusted-content",
+      "term": "Untrusted content",
+      "definition": "Skill text is untrusted model input. A host tags it with the server it came from and never runs a script from it without a per-skill approval. Nothing in this lab ever executes."
+    },
+    {
+      "id": "origin-binding",
+      "term": "Origin binding",
+      "definition": "A skill is identified by the host's label for the server plus its URI. A read of another server's resource needs explicit per-call approval naming both servers."
+    }
+  ],
+  "sources": [
+    {
+      "id": "mcp-skills-overview",
+      "title": "MCP Skills extension: overview",
+      "url": "https://modelcontextprotocol.io/extensions/skills/overview",
+      "kind": "standard",
+      "use": "What the extension is",
+      "status": "read",
+      "checked": "2026-11-09"
+    },
+    {
+      "id": "mcp-skills-sep-2640",
+      "title": "SEP-2640: Skills extension",
+      "url": "https://modelcontextprotocol.io/seps/2640-skills-extension.md",
+      "kind": "standard",
+      "use": "The proposal text",
+      "status": "read",
+      "checked": "2026-11-09"
+    },
+    {
+      "id": "mcp-skills-spec",
+      "title": "ext-skills specification (skills.mdx)",
+      "url": "https://github.com/modelcontextprotocol/ext-skills/blob/main/specification/beta/skills.mdx",
+      "kind": "standard",
+      "use": "Wire format and host requirements; read through a page summariser, not verbatim",
+      "status": "read",
+      "checked": "2026-11-09"
+    }
+  ],
+  "stories": [
+    {
+      "id": "S01",
+      "title": "Digest mismatch",
+      "say": "The file is rejected (digest-mismatch); nothing from it reaches the model."
+    },
+    {
+      "id": "S02",
+      "title": "Size mismatch",
+      "say": "The file is rejected (size-mismatch)."
+    },
+    {
+      "id": "S03",
+      "title": "Frontmatter differs from the entry",
+      "say": "The skill is not loaded (frontmatter-mismatch)."
+    },
+    {
+      "id": "S04",
+      "title": "Manifest swapped after approval",
+      "say": "The approval is revoked (approval-revoked); the skill needs a fresh approval."
+    },
+    {
+      "id": "S05",
+      "title": "allowed-tools and hooks smuggled in frontmatter",
+      "say": "The skill loads, but no tool grant and no hook is honoured (allowed-tools-ignored, hooks-ignored)."
+    },
+    {
+      "id": "S06",
+      "title": "Same name from two skill paths and two servers",
+      "say": "All copies stay registered under distinct keys with disambiguated labels, and a collision is reported (name-collision)."
+    },
+    {
+      "id": "S07",
+      "title": "Dynamic skill",
+      "say": "Declined by default (dynamic-declined); if a host loads it anyway, approval cannot be content-bound (dynamic-not-bindable)."
+    },
+    {
+      "id": "S08",
+      "title": "Manifest URI outside the skill root (../ path traversal)",
+      "say": "The skill is refused (uri-outside-root); no request is made for the escaping URI."
+    },
+    {
+      "id": "S09",
+      "title": "Manifest URI outside the skill root (absolute path)",
+      "say": "The skill is refused (uri-outside-root); no request is made for the escaping URI."
+    },
+    {
+      "id": "S10",
+      "title": "Manifest URI outside the skill root (other scheme)",
+      "say": "The skill is refused (uri-outside-root); no request is made for the escaping URI."
+    },
+    {
+      "id": "S11",
+      "title": "Manifest URI outside the skill root (percent-encoded ../)",
+      "say": "The skill is refused (uri-outside-root); no request is made for the escaping URI."
+    },
+    {
+      "id": "S12",
+      "title": "Manifest URI outside the skill root (percent-encoded backslash (%5C))",
+      "say": "The skill is refused (uri-outside-root); no request is made for the escaping URI."
+    },
+    {
+      "id": "S13",
+      "title": "More than 512 files",
+      "say": "Declined at listing time (limit-files), before any file is read."
+    },
+    {
+      "id": "S14",
+      "title": "Over 16 MiB",
+      "say": "Declined at listing time (limit-bytes), before any file is read."
+    },
+    {
+      "id": "S15",
+      "title": "Prompt injection in SKILL.md and a script",
+      "say": "Content is tagged untrusted with its origin; the script run is denied (script-exec-denied); nothing is executed. Marker scan is informational."
+    },
+    {
+      "id": "S16",
+      "title": "Skill missing from the listing, served by skills/get",
+      "say": "The host can get the unlisted skill. Flagging it as unlisted (unlisted-skill) and applying the same checks and approvals is lab policy."
+    },
+    {
+      "id": "S17",
+      "title": "Skill points at another server's resource",
+      "say": "The cross-server read is denied without approval (cross-server-denied); with approval naming both servers it is allowed."
+    },
+    {
+      "id": "S18",
+      "title": "Read of a file the manifest does not list",
+      "say": "The read is refused before any request (unlisted-file-read)."
+    },
+    {
+      "id": "S19",
+      "title": "Skill path does not end with the frontmatter name",
+      "say": "The skill is refused (name-path-mismatch)."
+    },
+    {
+      "id": "S20",
+      "title": "Hidden line in a block-scalar description",
+      "say": "The skill is not loaded (frontmatter-mismatch): the description the user approved differs from what SKILL.md says."
+    },
+    {
+      "id": "S21",
+      "title": "Manifest that omits SKILL.md",
+      "say": "The skill is refused (manifest-missing-skill-md); nothing is read."
+    },
+    {
+      "id": "S22",
+      "title": "A SKILL.md that is only a supporting file",
+      "say": "The file is data (nested-skill): its frontmatter is not read or granted, and activating it without its own consent is denied (nested-activation-denied)."
+    },
+    {
+      "id": "S23",
+      "title": "Skills extension declared without the resources capability",
+      "say": "The host does not call any skills method on that server (resources-capability-missing)."
+    }
+  ],
+  "cards": [
+    {
+      "id": "tab-skills",
+      "label": "Browse skills, read nothing until you click",
+      "description": "List a server's skills and manifests; the retrieval counter stays at 0 until a file is opened.",
+      "group": "concept",
+      "action": {
+        "type": "route",
+        "href": "/#/skills"
+      },
+      "terms": [
+        "skill",
+        "manifest"
+      ]
+    },
+    {
+      "id": "tab-approvals",
+      "label": "Approvals bound to the set of files",
+      "description": "Approve, swap the manifest, watch the approval go and stay gone.",
+      "group": "concept",
+      "action": {
+        "type": "route",
+        "href": "/#/approvals"
+      },
+      "terms": [
+        "approval-binding",
+        "allowed-tools"
+      ]
+    },
+    {
+      "id": "try-a-digest-mismatch",
+      "label": "a: Digest mismatch",
+      "description": "MUST: The file is rejected (digest-mismatch); nothing from it reaches the model.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=a-digest-mismatch"
+      },
+      "story": "S01",
+      "terms": [
+        "digest"
+      ]
+    },
+    {
+      "id": "try-b-size-mismatch",
+      "label": "b: Size mismatch",
+      "description": "MUST: The file is rejected (size-mismatch).",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=b-size-mismatch"
+      },
+      "story": "S02",
+      "terms": [
+        "digest"
+      ]
+    },
+    {
+      "id": "try-c-frontmatter-mismatch",
+      "label": "c: Frontmatter differs from the entry",
+      "description": "MUST: The skill is not loaded (frontmatter-mismatch).",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=c-frontmatter-mismatch"
+      },
+      "story": "S03",
+      "terms": [
+        "frontmatter"
+      ]
+    },
+    {
+      "id": "try-d-post-approval-swap",
+      "label": "d: Manifest swapped after approval",
+      "description": "MUST: The approval is revoked (approval-revoked); the skill needs a fresh approval.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=d-post-approval-swap"
+      },
+      "story": "S04",
+      "terms": [
+        "approval-binding"
+      ]
+    },
+    {
+      "id": "try-e-allowed-tools-smuggling",
+      "label": "e: allowed-tools and hooks smuggled in frontmatter",
+      "description": "MUST: The skill loads, but no tool grant and no hook is honoured (allowed-tools-ignored, hooks-ignored).",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=e-allowed-tools-smuggling"
+      },
+      "story": "S05",
+      "terms": [
+        "allowed-tools"
+      ]
+    },
+    {
+      "id": "try-f-name-collision",
+      "label": "f: Same name from two skill paths and two servers",
+      "description": "SHOULD: All copies stay registered under distinct keys with disambiguated labels, and a collision is reported (name-collision).",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=f-name-collision"
+      },
+      "story": "S06",
+      "terms": [
+        "name-collision"
+      ]
+    },
+    {
+      "id": "try-g-dynamic-skill",
+      "label": "g: Dynamic skill",
+      "description": "MAY: Declined by default (dynamic-declined); if a host loads it anyway, approval cannot be content-bound (dynamic-not-bindable).",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=g-dynamic-skill"
+      },
+      "story": "S07",
+      "terms": [
+        "dynamic-skill"
+      ]
+    },
+    {
+      "id": "try-h1-dotdot-traversal",
+      "label": "h1: Manifest URI outside the skill root (../ path traversal)",
+      "description": "lab: The skill is refused (uri-outside-root); no request is made for the escaping URI.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=h1-dotdot-traversal"
+      },
+      "story": "S08",
+      "terms": [
+        "manifest"
+      ]
+    },
+    {
+      "id": "try-h2-absolute-path",
+      "label": "h2: Manifest URI outside the skill root (absolute path)",
+      "description": "lab: The skill is refused (uri-outside-root); no request is made for the escaping URI.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=h2-absolute-path"
+      },
+      "story": "S09",
+      "terms": [
+        "manifest"
+      ]
+    },
+    {
+      "id": "try-h3-other-scheme",
+      "label": "h3: Manifest URI outside the skill root (other scheme)",
+      "description": "lab: The skill is refused (uri-outside-root); no request is made for the escaping URI.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=h3-other-scheme"
+      },
+      "story": "S10",
+      "terms": [
+        "manifest"
+      ]
+    },
+    {
+      "id": "try-h4-encoded-dotdot",
+      "label": "h4: Manifest URI outside the skill root (percent-encoded ../)",
+      "description": "lab: The skill is refused (uri-outside-root); no request is made for the escaping URI.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=h4-encoded-dotdot"
+      },
+      "story": "S11",
+      "terms": [
+        "manifest"
+      ]
+    },
+    {
+      "id": "try-h5-encoded-backslash",
+      "label": "h5: Manifest URI outside the skill root (percent-encoded backslash (%5C))",
+      "description": "lab: The skill is refused (uri-outside-root); no request is made for the escaping URI.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=h5-encoded-backslash"
+      },
+      "story": "S12",
+      "terms": [
+        "manifest"
+      ]
+    },
+    {
+      "id": "try-i1-too-many-files",
+      "label": "i: More than 512 files",
+      "description": "SHOULD: Declined at listing time (limit-files), before any file is read.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=i1-too-many-files"
+      },
+      "story": "S13",
+      "terms": [
+        "manifest"
+      ]
+    },
+    {
+      "id": "try-i2-too-many-bytes",
+      "label": "i: Over 16 MiB",
+      "description": "SHOULD: Declined at listing time (limit-bytes), before any file is read.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=i2-too-many-bytes"
+      },
+      "story": "S14",
+      "terms": [
+        "manifest"
+      ]
+    },
+    {
+      "id": "try-j-prompt-injection",
+      "label": "j: Prompt injection in SKILL.md and a script",
+      "description": "MUST: Content is tagged untrusted with its origin; the script run is denied (script-exec-denied); nothing is executed. Marker scan is informational.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=j-prompt-injection"
+      },
+      "story": "S15",
+      "terms": [
+        "untrusted-content"
+      ]
+    },
+    {
+      "id": "try-k-unlisted-skill",
+      "label": "k: Skill missing from the listing, served by skills/get",
+      "description": "lab: The host can get the unlisted skill. Flagging it as unlisted (unlisted-skill) and applying the same checks and approvals is lab policy.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=k-unlisted-skill"
+      },
+      "story": "S16",
+      "terms": [
+        "skill"
+      ]
+    },
+    {
+      "id": "try-l-cross-server-reference",
+      "label": "l: Skill points at another server's resource",
+      "description": "MUST: The cross-server read is denied without approval (cross-server-denied); with approval naming both servers it is allowed.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=l-cross-server-reference"
+      },
+      "story": "S17",
+      "terms": [
+        "origin-binding"
+      ]
+    },
+    {
+      "id": "try-m-unlisted-file-read",
+      "label": "m: Read of a file the manifest does not list",
+      "description": "MUST: The read is refused before any request (unlisted-file-read).",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=m-unlisted-file-read"
+      },
+      "story": "S18",
+      "terms": [
+        "manifest"
+      ]
+    },
+    {
+      "id": "try-n-name-path-mismatch",
+      "label": "n: Skill path does not end with the frontmatter name",
+      "description": "MUST: The skill is refused (name-path-mismatch).",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=n-name-path-mismatch"
+      },
+      "story": "S19",
+      "terms": [
+        "skill"
+      ]
+    },
+    {
+      "id": "try-o-comment-in-block-scalar",
+      "label": "o: Hidden line in a block-scalar description",
+      "description": "MUST: The skill is not loaded (frontmatter-mismatch): the description the user approved differs from what SKILL.md says.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=o-comment-in-block-scalar"
+      },
+      "story": "S20",
+      "terms": [
+        "frontmatter"
+      ]
+    },
+    {
+      "id": "try-p-missing-skill-md",
+      "label": "p: Manifest that omits SKILL.md",
+      "description": "MUST: The skill is refused (manifest-missing-skill-md); nothing is read.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=p-missing-skill-md"
+      },
+      "story": "S21",
+      "terms": [
+        "manifest"
+      ]
+    },
+    {
+      "id": "try-q-nested-skill",
+      "label": "q: A SKILL.md that is only a supporting file",
+      "description": "MUST: The file is data (nested-skill): its frontmatter is not read or granted, and activating it without its own consent is denied (nested-activation-denied).",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=q-nested-skill"
+      },
+      "story": "S22",
+      "terms": [
+        "skill"
+      ]
+    },
+    {
+      "id": "try-r-no-resources-capability",
+      "label": "r: Skills extension declared without the resources capability",
+      "description": "MUST: The host does not call any skills method on that server (resources-capability-missing).",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/verifier?case=r-no-resources-capability"
+      },
+      "story": "S23",
+      "terms": [
+        "skill"
+      ]
+    }
+  ]
+}

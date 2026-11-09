@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 26
+      - run: npm ci
+      - run: npm run build
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 26
+      - run: npm ci
+      - run: npm test
+      # The vendored shared stylesheet must match the hash pinned when it was last re-vendored.
+      - run: bash scripts/check-ui-standard.sh
+
+  e2e:
+    # The browser check (Playwright, headless Chromium) starts its own labs from this checkout, on the committed synthetic fixtures (no Docker needed).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 26
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e
+
+  doctor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 26
+      - run: npm ci
+      - run: npm run build
+      - run: PORT=7999 npm run doctor
+      - name: content pack validates
+        run: node scripts/validate-content-pack.mjs
+
+  forbidden-strings:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Scan history and tree (counts only, the list is never printed)
+        env:
+          FORBIDDEN_STRINGS: ${{ secrets.FORBIDDEN_STRINGS }}
+        run: |
+          list="$RUNNER_TEMP/forbidden.txt"
+          printf '%s\n' "$FORBIDDEN_STRINGS" | grep -v '^$' > "$list" || true
+          test -s "$list" || { echo "FORBIDDEN_STRINGS secret is empty"; exit 1; }
+          hist=$(git log -p --all | grep -cF -f "$list" || true)
+          tree=$(git grep -l -F -f "$list" -- . || true)
+          tree_count=$(printf '%s' "$tree" | grep -c . || true)
+          echo "history hits: $hist"
+          echo "tree files with hits: $tree_count"
+          test "$hist" = "0" && test "$tree_count" = "0"
+      - name: No AI attribution in the tree or recent commits
+        run: bash scripts/check-no-ai-attribution.sh
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks
+        run: |
+          base=https://github.com/gitleaks/gitleaks/releases/download/v8.18.4
+          curl -sSLO "$base/gitleaks_8.18.4_linux_x64.tar.gz"
+          curl -sSLO "$base/gitleaks_8.18.4_checksums.txt"
+          grep ' gitleaks_8.18.4_linux_x64.tar.gz$' gitleaks_8.18.4_checksums.txt | sha256sum -c -
+          tar -xz -f gitleaks_8.18.4_linux_x64.tar.gz gitleaks
+          ./gitleaks version
+      - name: Scan history
+        run: ./gitleaks detect --source . --redact --no-banner
