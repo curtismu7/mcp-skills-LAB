@@ -23,9 +23,12 @@ const nonTest = () => shipped().filter((p) => !p.includes(`${path.sep}test${path
 
 test('portability: no absolute author path, personal account name or foreign hostname in any shipped file', () => {
   const hits = [];
+  const PROXY_FILES = new Set(['docker-compose.yml', path.join('server', 'src', 'safety.js')]);
   const ALLOWED = new Set(['modelcontextprotocol.io', 'github.com', 'raw.githubusercontent.com']); // the last one is only the vendored check-ui-standard.sh
   for (const p of nonTest()) {
-    const t = fs.readFileSync(p, 'utf8');
+    let t = fs.readFileSync(p, 'utf8');
+    // The family's lab-proxy domain is the one name allowed, and only in the two files that wire the proxy (the Host allow-list default and its doc comment).
+    if (PROXY_FILES.has(path.relative(root, p))) t = t.replace(/(?:[a-z0-9-]+\.)?local\.ping-devops\.com(?::\d+)?/gi, 'proxy.invalid');
     if (/\/Users\/|\/home\/[a-z]|cmuir|ping-devops|pingone\.com|pingidentity/i.test(t)) hits.push(`${path.relative(root, p)}: a personal path or foreign name`);
     if (p.endsWith('.github/workflows/ci.yml') || p.endsWith('.gitignore')) continue;
     for (const m of t.matchAll(/\b(?:https?|wss?|ftp|skill):\/\/([^\s/?#"'`<>\\)\]]+)/gi)) {
@@ -62,6 +65,7 @@ test('docker-compose.yml publishes only on 127.0.0.1, port 7807 on both sides, r
   assert.match(d, /^USER node$/m); assert.match(d, /^EXPOSE 7807$/m); assert.match(d, /^ENV SKILLS_LAB_BIND=0\.0\.0\.0$/m);
   assert.doesNotMatch(d, /\bMODE=/);
   assert.match(c, /name: mcp-skills-lab/);
+  assert.match(c, /^\s+LAB_ALLOWED_HOSTS: \$\{LAB_ALLOWED_HOSTS:-mcp-skills-lab\.local\.ping-devops\.com\}$/m, 'the shared lab-proxy reaches the lab by this Host name, and only that one');
 });
 
 test('package.json: Node 26, exact-pinned SDK (no ranges), the three scripts, glob test command', () => {

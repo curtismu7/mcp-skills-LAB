@@ -60,6 +60,41 @@ test('LAB_ALLOWED_HOSTS lets the shared lab-proxy name through, and only that na
   assert.equal(hostProblem({ host: 'other.example' }, { LAB_ALLOWED_HOSTS: 'lab.example' }), 'Host must be a loopback name');
 });
 
+const PROXY_HOST = 'mcp-skills-lab.local.ping-devops.com';
+const PROXY_ENV = { LAB_ALLOWED_HOSTS: PROXY_HOST };
+const viaProxy = (extra = {}) => ({ host: `${PROXY_HOST}:7807`, origin: 'https://local.ping-devops.com:8443', 'x-forwarded-host': 'local.ping-devops.com:8443', 'x-forwarded-proto': 'https', 'sec-fetch-site': 'same-origin', ...extra });
+
+test('behind the lab-proxy: a write with the proxy Origin passes only when Host is on LAB_ALLOWED_HOSTS and the forwarded headers match the Origin', () => {
+  const REFUSED = 'writes must be same-origin';
+  assert.equal(crossOriginProblem('POST', viaProxy(), PROXY_ENV), null, 'the proxy path works');
+  assert.equal(crossOriginProblem('POST', viaProxy(), {}), REFUSED, 'no allow-list: refused');
+  assert.equal(crossOriginProblem('POST', viaProxy({ 'x-forwarded-host': undefined }), PROXY_ENV), REFUSED, 'no forwarded host');
+  assert.equal(crossOriginProblem('POST', viaProxy({ origin: 'https://evil.example' }), PROXY_ENV), REFUSED, 'foreign Origin');
+  assert.equal(crossOriginProblem('POST', viaProxy({ 'x-forwarded-host': 'evil.example' }), PROXY_ENV), REFUSED, 'forwarded host does not match the Origin');
+  assert.equal(crossOriginProblem('POST', viaProxy({ origin: 'http://local.ping-devops.com:8443' }), PROXY_ENV), REFUSED, 'scheme must match X-Forwarded-Proto');
+  assert.equal(crossOriginProblem('POST', viaProxy({ 'x-forwarded-proto': 'ftp', origin: 'ftp://local.ping-devops.com:8443' }), PROXY_ENV), REFUSED);
+  assert.equal(crossOriginProblem('POST', viaProxy({ 'sec-fetch-site': 'cross-site' }), PROXY_ENV), REFUSED, 'cross-site stays refused');
+  // Forwarded headers are ignored on any Host that is not on the list, loopback included.
+  assert.equal(crossOriginProblem('POST', viaProxy({ host: '127.0.0.1:7807' }), PROXY_ENV), REFUSED, 'loopback Host does not make forwarded headers believable');
+  assert.equal(crossOriginProblem('POST', viaProxy({ host: 'other.example' }), PROXY_ENV), REFUSED);
+});
+
+test('behind the lab-proxy over real HTTP: the allowed Host gets the page and a proxied write; a bad Host or a foreign Origin gets 403', async () => {
+  const srv = await listen(PROXY_ENV);
+  try {
+    const req = (path, headers, method = 'GET', body) => rawRequest({ port: srv.port, method, path, headers: { 'content-type': 'application/json', ...headers }, body });
+    assert.equal((await req('/api/health', { host: `${PROXY_HOST}:7807` })).status, 200);
+    assert.equal((await req('/api/health', { host: 'evil.example:7807' })).status, 403, 'evil Host');
+    assert.equal((await req('/api/health', { host: 'local.ping-devops.com:8443' })).status, 403, 'the bare proxy name is not on the list');
+    assert.equal((await req('/api/health', { host: `x.${PROXY_HOST}:7807` })).status, 403, 'a subdomain trick');
+    const mode = (h) => req('/api/mode', h, 'POST', JSON.stringify({ source: 'mock' }));
+    assert.equal((await mode(viaProxy())).status, 200, 'POST /api/mode with the proxy Origin');
+    assert.equal((await mode(viaProxy({ origin: 'https://evil.example', 'x-forwarded-host': 'evil.example:8443' }))).status, 403, 'foreign Origin');
+    assert.equal((await mode(viaProxy({ 'x-forwarded-host': 'evil.example:8443' }))).status, 403, 'forwarded host that does not match the Origin');
+    assert.equal((await mode({ host: `${PROXY_HOST}:7807`, origin: 'https://local.ping-devops.com:8443' })).status, 403, 'no forwarded headers');
+  } finally { await srv.close(); }
+});
+
 test('same-origin writes: a cross-site Origin or Sec-Fetch-Site on a POST is refused (API and /mcp); same-origin and no-Origin pass', async () => {
   const srv = await listen();
   try {

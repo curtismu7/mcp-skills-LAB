@@ -60,7 +60,7 @@ export async function createApp({ env = process.env, health, catalogs, hostile, 
     headers.host ||= url.host;
     const hp = hostProblem(headers, env);
     if (hp) return json(403, { error: 'bad_host', message: hp });
-    const cp = crossOriginProblem(req.method, headers);
+    const cp = crossOriginProblem(req.method, headers, env);
     if (cp) return json(403, { error: 'cross_origin', message: cp });
     if (tooLarge) return json(413, { error: 'payload_too_large' });
     const p = url.pathname;
