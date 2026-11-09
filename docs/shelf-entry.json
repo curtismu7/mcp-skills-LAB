@@ -3,7 +3,7 @@
     {
       "id": "mcp-skills-lab",
       "name": "MCP Skills LAB",
-      "catalogId": "TBD",
+      "catalogId": "D127",
       "kind": "Tester",
       "description": "Tests the MCP Skills extension (io.modelcontextprotocol/skills, SEP-2640): a skills server (Mock or Real), 23 hostile cases a correct host must catch, and a host verifier that checks digests, sizes, frontmatter, approvals and origins. Nothing is executed or fetched.",
       "url": "http://localhost:7807",
@@ -11,7 +11,7 @@
       "composeFile": "mcp-skills-LAB/docker-compose.yml",
       "composeOverlays": [],
       "pingProducts": [],
-      "notes": "Host-run: npm start (port 7807). Docker: docker compose up --build -d (published on 127.0.0.1 only). Mock by default; Real reads SKILLS_DIR (read-only mount; override example on the page's Source tab). No tenant, no credentials, no outbound call. composeFile is relative to the folder that holds the clone (a placeholder the shelf resolves). Web page at / (six tabs). Content pack uses the family placeholder catalog id D999; catalogId stays TBD until the owner assigns one. UNVERIFIED against a vendor gateway."
+      "notes": "Host-run: npm start (port 7807). Docker: docker compose up --build -d (published on 127.0.0.1 only). Mock by default; Real reads SKILLS_DIR (read-only mount; override example on the page's Source tab). No tenant, no credentials, no outbound call. composeFile is relative to the folder that holds the clone (a placeholder the shelf resolves). Web page at / (six tabs). Catalog id D127 (assigned 2026-11-09, next free after D126); the shelf catalog has no row for it yet, like D123 to D126. UNVERIFIED against a vendor gateway."
     }
   ]
 }

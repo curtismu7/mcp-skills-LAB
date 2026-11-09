@@ -1,7 +1,6 @@
 // Builds content-pack.json for the Learning Hub from the hostile-case data, so the pack cannot drift from the cases.
 //   node scripts/build-content-pack.mjs        (writes content-pack.json)
-// demo.catalog is D999: the content-pack schema requires a catalog id and no catalog row matches this lab yet (D999 is the family's "no row yet"
-// placeholder). docs/shelf-entry.json keeps catalogId "TBD" until the owner assigns one.
+// demo.catalog is D127, the catalog id the owner had assigned on 2026-11-09 (next free after D126). It matches docs/shelf-entry.json and the shelf registry.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,7 +24,7 @@ export function buildPack() {
     id: 'mcp-skills-lab',
     title: 'MCP Skills LAB',
     version,
-    demo: { id: 'mcp-skills-lab', name: 'MCP Skills LAB', catalog: 'D999', baseUrl: 'http://127.0.0.1:7807', doctor: '/api/health', tags: ['mcp', 'skills', 'sep-2640', 'host-verification', 'hostile', 'mock'] },
+    demo: { id: 'mcp-skills-lab', name: 'MCP Skills LAB', catalog: 'D127', baseUrl: 'http://127.0.0.1:7807', doctor: '/api/health', tags: ['mcp', 'skills', 'sep-2640', 'host-verification', 'hostile', 'mock'] },
     glossary: [
       { id: 'skill', term: 'Skill', definition: 'A folder with a SKILL.md (YAML frontmatter with name and description) and optional files, exposed over MCP resources at skill://<skill-path>/<file>. The last segment of the skill path must equal the frontmatter name.' },
       { id: 'manifest', term: 'Manifest', definition: 'The resources array of a skill entry: every file exactly once (including SKILL.md) with its URI, SHA-256 digest and byte size. A host reads only URIs that are in it.' },

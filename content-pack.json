@@ -6,7 +6,7 @@
   "demo": {
     "id": "mcp-skills-lab",
     "name": "MCP Skills LAB",
-    "catalog": "D999",
+    "catalog": "D127",
     "baseUrl": "http://127.0.0.1:7807",
     "doctor": "/api/health",
     "tags": [
