@@ -47,8 +47,13 @@ export function hostProblem(headers, env = process.env) {
 }
 
 const WRITE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
-/** Returns null when a write is same-origin (or the request is not a write), else a short reason. */
-export function crossOriginProblem(method, headers) {
+/**
+ * Returns null when a write is same-origin (or the request is not a write), else a short reason.
+ * Behind the shared lab-proxy the browser's Origin is the proxy's (https://local.ping-devops.com:8443) while Host is this lab's own
+ * name. The proxy sets X-Forwarded-Host / X-Forwarded-Proto; they are believed ONLY when Host is a name the operator listed in
+ * LAB_ALLOWED_HOSTS (loopback does not count), so a request that did not come through the proxy cannot use them.
+ */
+export function crossOriginProblem(method, headers, env = process.env) {
   if (!WRITE.has(method)) return null;
   const site = headers['sec-fetch-site'];
   if (site && site !== 'same-origin' && site !== 'none') return 'writes must be same-origin';
@@ -56,6 +61,11 @@ export function crossOriginProblem(method, headers) {
   if (origin) {
     let ok = false;
     try { ok = new URL(origin).host.toLowerCase() === String(headers.host || '').toLowerCase(); } catch { /* malformed */ }
+    if (!ok && extraHosts(env).includes(hostOf(headers.host))) {
+      const xfh = String(headers['x-forwarded-host'] || '').trim().toLowerCase();
+      const xfp = String(headers['x-forwarded-proto'] || 'https').trim().toLowerCase();
+      ok = xfh !== '' && (xfp === 'https' || xfp === 'http') && origin.toLowerCase() === `${xfp}://${xfh}`;
+    }
     if (!ok) return 'writes must be same-origin';
   }
   return null;

@@ -20,6 +20,8 @@ services:
       PORT: "7807"
       SKILLS_LAB_BIND: 0.0.0.0
       SHELF_URL: ${SHELF_URL:-}
+      # The shared lab-proxy reaches this lab as this Host name (see AI-DEMO-Standalone shared/lab-proxy); loopback always works.
+      LAB_ALLOWED_HOSTS: ${LAB_ALLOWED_HOSTS:-mcp-skills-lab.local.ping-devops.com}
     read_only: true
     tmpfs:
       - /tmp
