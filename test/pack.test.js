@@ -23,12 +23,12 @@ test('every hostile case has a story and a card; every card terms exist; a broke
   const errors = validatePack(bad).join('\n');
   assert.match(errors, /unknown term nope/); assert.match(errors, /unknown story ghost/);
   const wrongCatalog = buildPack(); wrongCatalog.demo.catalog = 'TBD';
-  assert.ok(validatePack(wrongCatalog).length > 0, 'the schema insists on a catalog id pattern, hence the D999 placeholder');
+  assert.ok(validatePack(wrongCatalog).length > 0, 'the schema insists on a catalog id pattern (a letter and digits)');
 });
 
-test('the pack uses the family placeholder D999 while the shelf entry keeps catalogId TBD (the owner assigns one)', () => {
-  assert.equal(buildPack().demo.catalog, 'D999');
-  assert.equal(JSON.parse(fs.readFileSync(new URL('../docs/shelf-entry.json', import.meta.url), 'utf8')).demos[0].catalogId, 'TBD');
+test('the pack and the shelf entry carry the same catalog id, D127', () => {
+  assert.equal(buildPack().demo.catalog, 'D127');
+  assert.equal(JSON.parse(fs.readFileSync(new URL('../docs/shelf-entry.json', import.meta.url), 'utf8')).demos[0].catalogId, 'D127');
 });
 
 test('docs/talk-track.md is exactly what the talk-track data renders (run: npm run talk-track)', () => {

@@ -98,7 +98,7 @@ test('CI is GitHub-hosted, Node 26 only, actions v5, with test, doctor, forbidde
 test('README standard: title ends in LAB, plain Tier: Tester, Repo and Catalog lines, the UNVERIFIED banner, the sources, one row per hostile case', () => {
   const r = read('README.md');
   assert.match(r.split('\n')[0], /^# .* LAB$/);
-  assert.match(r, /^Tier: Tester$/m); assert.match(r, /^Repo: /m); assert.match(r, /^Catalog: TBD$/m);
+  assert.match(r, /^Tier: Tester$/m); assert.match(r, /^Repo: /m); assert.match(r, /^Catalog: D127$/m);
   assert.match(r, /Simulated and UNVERIFIED/);
   for (const u of ['https://modelcontextprotocol.io/extensions/skills/overview', 'https://modelcontextprotocol.io/seps/2640-skills-extension.md', 'https://github.com/modelcontextprotocol/ext-skills/blob/main/specification/beta/skills.mdx']) assert.ok(r.includes(u), u);
   for (const c of HOSTILE_CASES) assert.ok(r.includes(`\`${c.id}\``), `README lists ${c.id}`);
@@ -107,9 +107,9 @@ test('README standard: title ends in LAB, plain Tier: Tester, Repo and Catalog l
   assert.ok(!/\bdoor\b/i.test(r + read('CLAUDE.md') + read('docs/talk-track.md')), 'the word "door" is not used');
 });
 
-test('shelf entry: port 7807, health path, Tester, catalog id left as TBD (not invented), portable composeFile', () => {
+test('shelf entry: port 7807, health path, Tester, catalog id D127 (assigned by the owner), portable composeFile', () => {
   const e = JSON.parse(read('docs/shelf-entry.json')).demos[0];
-  assert.equal(e.id, 'mcp-skills-lab'); assert.equal(e.kind, 'Tester'); assert.equal(e.catalogId, 'TBD');
+  assert.equal(e.id, 'mcp-skills-lab'); assert.equal(e.kind, 'Tester'); assert.equal(e.catalogId, 'D127');
   assert.equal(e.url, 'http://localhost:7807'); assert.equal(e.healthPath, '/api/health');
   assert.equal(e.composeFile, 'mcp-skills-LAB/docker-compose.yml'); assert.ok(!path.isAbsolute(e.composeFile) && !e.composeFile.includes('..'));
   assert.deepEqual(e.pingProducts, []);
