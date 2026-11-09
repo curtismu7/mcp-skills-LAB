@@ -185,7 +185,7 @@ export async function runAllCases(opts = {}) {
   return { era: opts.era ?? 'modern', total: results.length, passed: results.filter((r) => r.verdict === 'PASS').length, results };
 }
 
-/** Control: the same host against a CLEAN catalog (Mock or Real) must load every skill and verify every file with no findings beyond the information-level tag. */
+/** Control: the same host against a CLEAN catalog (Mock or Real) must load every skill and verify every file with no findings beyond information-level ones (see `notes`). */
 export async function runControl({ fetch = globalThis.fetch, base = 'http://127.0.0.1:7807', path = '/mcp', era = 'modern', disable = [], onWire } = {}) {
   const v = new HostVerifier({ fetch, disable, onWire });
   const out = { verdict: 'FAIL', era, skills: [], error: null };
@@ -200,8 +200,12 @@ export async function runControl({ fetch = globalThis.fetch, base = 'http://127.
       if (act.loaded && Array.isArray(rec.entry.resources)) for (const r of rec.entry.resources) { if (r.uri === rec.uri) continue; const f = await v.readFile('srv', rec.uri, r.uri); files.push({ uri: r.uri, ok: f.ok }); }
       out.skills.push({ uri: rec.uri, name: rec.name, loaded: act.loaded, files, filesVerified: files.every((f) => f.ok) });
     }
-    const problems = v.findings.filter((f) => f.id !== 'untrusted-content' && f.id !== 'injection-markers');
+    // Information-level findings are observations, not failures: the untrusted-content tag (its own kind is MUST, but it is the tag every load carries), the marker scan, and a frontmatter field the
+    // host does not honour (a Claude Code skill's argument-hint, for one). They do not fail the control; the last kind is listed in `notes`.
+    const isInfo = (f) => f.id === 'untrusted-content' || FINDINGS[f.id]?.kind === 'info';
+    const problems = v.findings.filter((f) => !isInfo(f));
     out.findings = problems.map(({ key, ...f }) => f);
+    out.notes = v.findings.filter((f) => isInfo(f) && f.id !== 'untrusted-content' && f.id !== 'injection-markers').map(({ key, ...f }) => f);
     out.verdict = problems.length === 0 && listing.skills.length > 0 && out.skills.every((s) => s.loaded && s.filesVerified) && out.readsAfterList === 0 ? 'PASS' : 'FAIL';
   } catch (e) { out.error = String(e.message).slice(0, 240); }
   await v.close();

@@ -187,6 +187,21 @@ test('non-UTF-8: a binary side file is served as a blob with a digest over the r
   } finally { f.cleanup(); }
 });
 
+test('control on a clean Real folder whose skills carry a Claude Code field (argument-hint): PASS in both eras; the ignored field is reported as an information note, not a problem', async () => {
+  const f = fixture();
+  try {
+    f.w('hinted/SKILL.md', md('hinted', 'A skill with an editor-only field.', 'argument-hint: "[topic]"\n'));
+    const { send } = await makeApp({ SKILLS_DIR: f.root });
+    for (const era of ['modern', 'legacy']) {
+      const ctl = await runControl({ fetch: send, era });
+      assert.equal(ctl.verdict, 'PASS', JSON.stringify(ctl.findings ?? ctl.error));
+      assert.equal(ctl.skills.length, 3);
+      assert.deepEqual(ctl.findings, [], 'nothing that fails the control');
+      assert.deepEqual(ctl.notes.map((n) => [n.id, n.skillUri, n.detail]), [['extra-frontmatter-ignored', 'skill://hinted/SKILL.md', 'argument-hint']]);
+    }
+  } finally { f.cleanup(); }
+});
+
 test('frontmatter name that differs from the folder is a catalog problem and the skill is skipped; a folder without SKILL.md is ignored', async () => {
   const f = fixture();
   try {
