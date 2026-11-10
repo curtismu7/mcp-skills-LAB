@@ -5,6 +5,8 @@
 # Prints counts and locations, never the matching text. Usage: scripts/check-no-ai-attribution.sh   (run from anywhere in the repo)
 set -u
 rule_date="2026-11-07"
+# The owner's own addresses (the repo commit identity and the GitHub profile noreply address); a squash trailer naming them is fine.
+owner='aidemo@mailinator\.com|[0-9]+\+curtismu7@users\.noreply\.github\.com|curtismu7@users\.noreply\.github\.com'
 # bracketed first letters so this file does not match its own pattern
 pat='[G]enerated with \[?[C]laude Code|[C]o-[A]uthored-[B]y:'
 cd "$(git rev-parse --show-toplevel)" || exit 1
@@ -17,7 +19,9 @@ if [ "$tree_count" != "0" ]; then printf '%s\n' "$tree" | sed 's/^/  /'; status=
 
 bad=0
 for h in $(git log --all --since="$rule_date" --format=%H 2>/dev/null); do
-  if git log -1 --format=%B "$h" | grep -qiE "$pat"; then bad=$((bad+1)); echo "  commit ${h:0:7}"; fi
+  # GitHub's squash merge adds a trailer naming the owner when a commit's author email is not the profile's. That is the owner's own
+  # identity, not an AI credit, so a trailer naming one of the owner's own addresses is not counted. Any other trailer still fails.
+  if git log -1 --format=%B "$h" | grep -viE "^[C]o-[A]uthored-[B]y:.*<($owner)>" | grep -qiE "$pat"; then bad=$((bad+1)); echo "  commit ${h:0:7}"; fi
 done
 echo "commits since $rule_date with an AI-attribution credit: $bad"
 [ "$bad" != "0" ] && status=1
