@@ -238,7 +238,7 @@ test('diagram: loaded by name, valid diagram-studio/1, steps point at real edges
 test('the banner words: the web app and the server say the same MEASURED fact, and both say UNVERIFIED and SDK', () => {
   const web = fs.readFileSync(new URL('../web/src/banner.js', import.meta.url), 'utf8');
   assert.ok(web.includes(MEASURED), 'web/src/banner.js MEASURED differs from server/src/spec.js');
-  assert.match(MEASURED, /^MEASURED 2026-11-09 /); assert.match(MEASURED, /-32601/); assert.match(MEASURED, /v1\.261106/); assert.match(MEASURED, /Non-aggregate endpoints were not tested/);
+  assert.match(MEASURED, /^MEASURED 2026-11-09 /); assert.match(MEASURED, /-32601/); assert.match(MEASURED, /v1\.261106/); assert.match(MEASURED, /non-aggregate endpoint \(hostile-mcp\) passed skills\/list through to its backend/); assert.match(MEASURED, /This lab itself was not reached through the gateway/);
   assert.match(web, /UNVERIFIED/); assert.match(web, /SDK's exported protocol constants still lag/); assert.match(web, /nothing here is verified against a vendor gateway/);
   assert.doesNotMatch(MEASURED + web, /\bdoor\b/i, 'the owner says P1 Privilege Agent App / endpoint, never "door"');
 });
