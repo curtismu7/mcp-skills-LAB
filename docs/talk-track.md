@@ -8,7 +8,7 @@ Presenter mode: press P (or the Presenter button); Esc leaves. The banner stays 
 
 ## What is simulated, and what is not verified
 
-The extension is new and the SDK's exported constants still list only 2025 revisions, so nothing here is verified against a vendor gateway. The skills are synthetic (Mock) or read from a folder you mounted (Real), and the hostile servers are honest servers with one documented lie. Nothing is executed or fetched. MEASURED 2026-11-09 on one hosted gateway aggregate endpoint only: the Privilege gateway (privilege-aigw v1.261106) answered server/discover, skills/list, skills/get and resources/directory/read with JSON-RPC -32601 unknown method, so it does not carry the Skills extension on that endpoint. Non-aggregate endpoints were not tested.
+The extension is new and the SDK's exported constants still list only 2025 revisions, so nothing here is verified against a vendor gateway. The skills are synthetic (Mock) or read from a folder you mounted (Real), and the hostile servers are honest servers with one documented lie. Nothing is executed or fetched. MEASURED 2026-11-09 on the hosted Privilege gateway (privilege-aigw v1.261106): its aggregate endpoint answered server/discover, skills/list, skills/get and resources/directory/read with JSON-RPC -32601 unknown method, so it does not carry the Skills extension there. A non-aggregate endpoint (hostile-mcp) passed skills/list through to its backend, which answered Method not found (-32601). This lab itself was not reached through the gateway: a test endpoint for it returned 403 for every request.
 
 Tabs: Overview.
 
