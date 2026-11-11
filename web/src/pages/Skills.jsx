@@ -95,10 +95,6 @@ export default function Skills({ info, dataKey, resetKey }) {
               {s.label}{!s.loadable ? " (refused)" : ""}{!s.listed ? " (unlisted)" : ""}
             </button>
           ))}
-          <label className="byuri">Get by URI
-            <input value={byUri} onChange={(e) => setByUri(e.target.value)} placeholder="skill://name/SKILL.md" data-testid="by-uri" />
-          </label>
-          <button type="button" aria-disabled={!byUri.trim()} onClick={() => byUri.trim() && getByUri()} data-testid="get-by-uri">skills/get</button>
         </nav>
         <section className="panel" aria-label="Skill">
           {!sel && <p className="muted">Select a skill.</p>}
@@ -124,6 +120,17 @@ export default function Skills({ info, dataKey, resetKey }) {
                   </table>
                 </div>
               )}
+              <div className="row">
+                <button type="button" onClick={activate} data-testid="activate">Activate (reads SKILL.md)</button>
+                <span className="muted">Reading SKILL.md is not activation; this is the host's own loading step.</span>
+              </div>
+            </>
+          )}
+        </section>
+        <section className="panel output-panel" aria-label="Skill output">
+          {!sel && <p className="muted">Nothing read yet. View a manifest file or press Activate.</p>}
+          {sel && (
+            <>
               {Object.entries(files).filter(([k]) => k.startsWith(`${sel.uri}|`)).map(([k, r]) => (
                 <div key={k} className="fileview" data-testid="fileview">
                   <p><strong className="mono wrap">{k.split("|")[1]}</strong> {r.ok ? <Chip tone="ok" title="The byte size and SHA-256 of the WHOLE file matched the manifest">{`verified (size and SHA-256 of all ${r.bytes} bytes)`}</Chip> : <Chip tone="danger">rejected: {r.problems.join(", ")}</Chip>} {r.nested && <Chip tone="warn">nested SKILL.md: data, not a skill</Chip>}</p>
@@ -131,10 +138,6 @@ export default function Skills({ info, dataKey, resetKey }) {
                   {r.ok && <pre className="code" data-testid="filetext">{r.text ?? "(binary)"}</pre>}
                 </div>
               ))}
-              <div className="row">
-                <button type="button" onClick={activate} data-testid="activate">Activate (reads SKILL.md)</button>
-                <span className="muted">Reading SKILL.md is not activation; this is the host's own loading step.</span>
-              </div>
               {activation[sel.uri] && (
                 <div data-testid="activation">
                   {activation[sel.uri].loaded
@@ -146,6 +149,10 @@ export default function Skills({ info, dataKey, resetKey }) {
               )}
             </>
           )}
+          <label className="byuri">Get by URI
+            <input value={byUri} onChange={(e) => setByUri(e.target.value)} placeholder="skill://name/SKILL.md" data-testid="by-uri" />
+          </label>
+          <button type="button" aria-disabled={!byUri.trim()} onClick={() => byUri.trim() && getByUri()} data-testid="get-by-uri">skills/get</button>
         </section>
       </div>
       <details open={showWire} onToggle={(e) => setShowWire(e.currentTarget.open)}>
