@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ShelfLink from "./components/ShelfLink.jsx";
-import ModeToggle from "./components/ModeToggle.jsx";
+import TopMenu from "./top-menu/TopMenu";
 import Overview from "./pages/Overview.jsx";
 import Skills from "./pages/Skills.jsx";
 import Verifier from "./pages/Verifier.jsx";
@@ -16,7 +16,6 @@ export { BANNER_SIM, MEASURED };
 // Hash-routed tabs (no router dependency). The banner sits above every one of them, presenter mode included.
 export const PAGES = [["overview", "Overview", Overview], ["skills", "Skills", Skills], ["verifier", "Verifier", Verifier], ["approvals", "Approvals", Approvals], ["source", "Source", Source], ["diagram", "Diagram", DiagramPage]];
 const THEME_KEY = "msl.theme";
-const THEMES = [["auto", "Auto"], ["light", "Light"], ["dark", "Dark"]];
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
   set(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* not remembered */ } },
@@ -79,13 +78,17 @@ export default function App() {
           {PAGES.map(([id, label]) => <a key={id} href={`#/${id}`} aria-current={id === page ? "page" : undefined}>{label}</a>)}
         </nav>
         <span className="shell-right">
-          <ModeToggle info={info} onSelect={selectMode} />
-          <ShelfLink headers={() => ({ "x-workspace": workspaceId() })} />
-          <label className="shell-theme">Theme
-            <select value={theme} onChange={(e) => pickTheme(e.target.value)} data-testid="theme">{THEMES.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select>
-          </label>
-          <button type="button" onClick={onReset} data-testid="reset">Reset</button>
-          <button type="button" aria-pressed={presenter} onClick={() => setPresenter((v) => !v)} data-testid="presenter">{presenter ? "Exit presenter (Esc)" : "Presenter (P)"}</button>
+          <TopMenu
+            mode={{ value: source === "real" ? "real" : "mock", onChange: selectMode, realAvailable: info ? info.realAvailable : null, realHint: info?.realReason }}
+            theme={{ value: theme, onChange: pickTheme }}
+            present={{ active: presenter, onToggle: () => setPresenter((v) => !v), label: "Presenter (P)" }}
+            talkTrack={{ active: say.length > 0 && presenter, onToggle: () => setPresenter((v) => !v) }}
+            help={{ href: "https://github.com/curtismu7/mcp-skills-LAB#readme" }}
+            version={info?.demo?.version || null}
+            onReset={onReset}
+          >
+            <ShelfLink headers={() => ({ "x-workspace": workspaceId() })} />
+          </TopMenu>
         </span>
       </header>
       <main className="page" id="main" tabIndex={-1} ref={mainRef}>

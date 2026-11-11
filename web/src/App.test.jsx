@@ -87,9 +87,9 @@ describe("shell and banner", () => {
     await screen.findByTestId("mode-badge");
     expect(container.querySelector("header.shell-bar")).toBeTruthy();
     expect(within(screen.getByRole("navigation", { name: "Lab sections" })).getAllByRole("link").map((a) => a.textContent)).toEqual(["Overview", "Skills", "Verifier", "Approvals", "Source", "Diagram"]);
-    fireEvent.change(screen.getByTestId("theme"), { target: { value: "dark" } });
+    fireEvent.change(screen.getByTestId("theme-select"), { target: { value: "dark" } });
     expect(document.documentElement.dataset.theme).toBe("dark"); expect(localStorage.getItem("msl.theme")).toBe("dark");
-    fireEvent.change(screen.getByTestId("theme"), { target: { value: "auto" } });
+    fireEvent.change(screen.getByTestId("theme-select"), { target: { value: "auto" } });
     expect(document.documentElement.dataset.theme).toBeUndefined();
   });
   it("presenter mode: P toggles, Esc leaves, the note for the current tab shows, typing P in a field does not toggle", async () => {
@@ -108,26 +108,26 @@ describe("shell and banner", () => {
 describe("rule 19 toggle", () => {
   it("Mock is pressed; Real is aria-disabled with the how-to tooltip; pressing it shows the server's 409 reason and the mode stays", async () => {
     render(<App />);
-    await waitFor(() => expect(screen.getByTestId("mode-mock")).toHaveAttribute("aria-pressed", "true"));
-    const real = screen.getByTestId("mode-real");
-    expect(real).toHaveAttribute("aria-disabled", "true"); expect(real.title).toMatch(/SKILLS_DIR/);
-    fireEvent.click(real);
+    await waitFor(() => expect(screen.getByTestId("mode-select")).toHaveValue("mock"));
+    const real = screen.getByRole("option", { name: "Real" });
+    expect(real).toBeDisabled(); expect(real.title).toMatch(/SKILLS_DIR/);
+    fireEvent.change(screen.getByTestId("mode-select"), { target: { value: "real" } });
     expect(await screen.findByTestId("mode-message")).toHaveTextContent("no skills directory configured");
-    expect(screen.getByTestId("mode-mock")).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("mode-select")).toHaveValue("mock");
     expect(calls.filter((c) => c.url === "/api/mode")).toEqual([{ url: "/api/mode", body: { source: "real" } }]);
   });
   it("switches Mock to Real and back with exactly { source }, flips the banner state, and reloads the data", async () => {
     mockApi({ info: { ...MOCK_INFO, realAvailable: true, realReason: null } });
     render(<App />);
-    await waitFor(() => expect(screen.getByTestId("mode-real")).not.toHaveAttribute("aria-disabled"));
+    await waitFor(() => expect(screen.getByTestId("mode-select")).toBeEnabled());
     go("skills"); await screen.findByTestId("skill-release-checklist");
     const listsBefore = calls.filter((c) => c.url === "/api/browse/list").length;
-    fireEvent.click(screen.getByTestId("mode-real"));
-    await waitFor(() => expect(screen.getByTestId("mode-real")).toHaveAttribute("aria-pressed", "true"));
+    fireEvent.change(screen.getByTestId("mode-select"), { target: { value: "real" } });
+    await waitFor(() => expect(screen.getByTestId("mode-select")).toHaveValue("real"));
     expect(screen.getByTestId("banner")).toHaveAttribute("data-state", "live"); expect(screen.getByTestId("mode-badge")).toHaveTextContent("Real");
     await waitFor(() => expect(calls.filter((c) => c.url === "/api/browse/list").length).toBeGreaterThan(listsBefore));
-    fireEvent.click(screen.getByTestId("mode-mock"));
-    await waitFor(() => expect(screen.getByTestId("mode-mock")).toHaveAttribute("aria-pressed", "true"));
+    fireEvent.change(screen.getByTestId("mode-select"), { target: { value: "mock" } });
+    await waitFor(() => expect(screen.getByTestId("mode-select")).toHaveValue("mock"));
     expect(calls.filter((c) => c.url === "/api/mode").map((c) => c.body)).toEqual([{ source: "real" }, { source: "mock" }]);
   });
 });
