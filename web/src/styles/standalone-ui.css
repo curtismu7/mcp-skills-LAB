@@ -184,6 +184,13 @@ button[aria-pressed="true"] {
   outline-offset: 2px;
 }
 
+/* The dark shell bar sits on --box-dark: the shared --focus ring is too faint on it
+   (2.29:1 in the light theme), so inside the bar the ring uses --on-box. */
+.shell-bar :focus-visible {
+  outline: 3px solid var(--on-box);
+  outline-offset: 2px;
+}
+
 /* Phone width: no horizontal scroll. Layout grids drop to one column. */
 @media (max-width: 600px) {
   body {
