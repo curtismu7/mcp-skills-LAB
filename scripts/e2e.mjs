@@ -263,7 +263,7 @@ try {
 
   await check('dark and light: every unselected control has a visible border (3:1 or more) in both themes; screenshots of each tab', async () => {
     for (const theme of ['light', 'dark']) {
-      await page.getByTestId('theme').selectOption(theme);
+      await page.getByTestId('theme-select').selectOption(theme);
       for (const tab of TABS) {
         await go(page, tab);
         await page.waitForTimeout(250);
@@ -286,7 +286,7 @@ try {
         await shot(page, `${theme}-${tab}`);
       }
     }
-    await page.getByTestId('theme').selectOption('auto');
+    await page.getByTestId('theme-select').selectOption('auto');
   });
 
   await check('375px: no horizontal scroll on any tab, in light and in dark', async () => {
@@ -294,7 +294,7 @@ try {
     const p = await small.newPage();
     await p.goto(`${BASE}/`);
     for (const theme of ['light', 'dark']) {
-      await p.getByTestId('theme').selectOption(theme);
+      await p.getByTestId('theme-select').selectOption(theme);
       for (const tab of TABS) {
         await go(p, tab);
         if (tab === 'verifier') { await p.getByTestId('run-all').click(); await p.getByTestId('verify-summary').waitFor({ timeout: 120000 }); }
@@ -336,7 +336,7 @@ try {
     await p.getByTestId(`skill-${LONG}`).click();
     expect((await p.getByTestId('skill-title').textContent()) === LONG, 'the long name is not shown in full');
     for (const theme of ['light', 'dark']) {
-      await p.getByTestId('theme').selectOption(theme);
+      await p.getByTestId('theme-select').selectOption(theme);
       await p.waitForTimeout(300);
       const w = await p.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }));
       expect(w.sw <= w.cw + 1, `${theme}: scrollWidth ${w.sw} > ${w.cw}`);
