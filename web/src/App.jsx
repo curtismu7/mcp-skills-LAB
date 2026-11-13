@@ -78,8 +78,7 @@ export default function App() {
           {PAGES.map(([id, label]) => <a key={id} href={`#/${id}`} aria-current={id === page ? "page" : undefined}>{label}</a>)}
         </nav>
         <span className="shell-right">
-          <span className="mode-toggle" style={{ display: "contents" }}>
-            <TopMenu
+          <TopMenu
             mode={{ value: source === "real" ? "real" : "mock", onChange: selectMode, realAvailable: info ? info.realAvailable : null, realHint: info?.realReason }}
             theme={{ value: theme, onChange: pickTheme }}
             present={{ active: presenter, onToggle: () => setPresenter((v) => !v), label: "Presenter (P)" }}
@@ -90,7 +89,6 @@ export default function App() {
           >
             <ShelfLink headers={() => ({ "x-workspace": workspaceId() })} />
           </TopMenu>
-          </span>
         </span>
       </header>
       <main className="page" id="main" tabIndex={-1} ref={mainRef}>
