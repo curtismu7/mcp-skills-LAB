@@ -89,18 +89,18 @@ try {
   });
 
   await check('rule 19 toggle: Mock then Real then Mock, pressed state follows the server, data reloads (Skills tab shows the other catalog)', async () => {
-    await page.getByTestId('mode-mock').click();
-    await page.waitForFunction(() => document.querySelector('[data-testid=mode-mock]').getAttribute('aria-pressed') === 'true');
+    await page.getByTestId('mode-select').selectOption('mock');
+    await page.waitForFunction(() => document.querySelector('[data-testid=mode-select]').value === 'mock');
     await go(page, 'skills');
     await page.getByTestId('skill-meeting-notes').waitFor();
-    await page.getByTestId('mode-real').click();
-    await page.waitForFunction(() => document.querySelector('[data-testid=mode-real]').getAttribute('aria-pressed') === 'true');
+    await page.getByTestId('mode-select').selectOption('real');
+    await page.waitForFunction(() => document.querySelector('[data-testid=mode-select]').value === 'real');
     expect(await page.getByTestId('mode-badge').textContent() === 'Real', 'badge is not Real');
     expect(await page.getByTestId('banner').getAttribute('data-state') === 'live', 'banner is not in the Real (live) state');
     await page.getByTestId('skill-ok-skill').waitFor({ timeout: 15000 });
     expect(await page.getByTestId('skill-meeting-notes').count() === 0, 'mock skill still listed in Real');
     await shot(page, '04-skills-real');
-    await page.getByTestId('mode-mock').click();
+    await page.getByTestId('mode-select').selectOption('mock');
     await page.getByTestId('skill-meeting-notes').waitFor({ timeout: 15000 });
     expect(await page.getByTestId('mode-badge').textContent() === 'Mock', 'badge is not Mock again');
   });
@@ -200,8 +200,8 @@ try {
   });
 
   await check('Source tab: SKILLS_DIR status, catalog problems (refused / info), and both read-only mount examples', async () => {
-    await page.getByTestId('mode-real').click();
-    await page.waitForFunction(() => document.querySelector('[data-testid=mode-real]').getAttribute('aria-pressed') === 'true');
+    await page.getByTestId('mode-select').selectOption('real');
+    await page.waitForFunction(() => document.querySelector('[data-testid=mode-select]').value === 'real');
     await go(page, 'source');
     await page.getByTestId('problems').waitFor();
     expect(await page.getByTestId('mount-example').count() === 2, 'mount examples');
@@ -210,8 +210,8 @@ try {
     expect(/readable/.test(await page.getByTestId('skills-dir').textContent()), 'SKILLS_DIR status');
     expect(Number(await page.getByTestId('problem-count').textContent()) >= 1, 'no problems listed for the fixture folder');
     await shot(page, '08-source');
-    await page.getByTestId('mode-mock').click();
-    await page.waitForFunction(() => document.querySelector('[data-testid=mode-mock]').getAttribute('aria-pressed') === 'true');
+    await page.getByTestId('mode-select').selectOption('mock');
+    await page.waitForFunction(() => document.querySelector('[data-testid=mode-select]').value === 'mock');
   });
 
   await check('Diagram tab: loaded by name, Simulate walks the steps, boxes drag, speed control, Reset restores positions', async () => {
@@ -311,13 +311,12 @@ try {
     await check(`a lab with SKILLS_DIR unset (${NOREAL}): Real is disabled with a how-to tooltip, pressing it shows the server's 409 reason and the mode stays Mock`, async () => {
       const p = await ctx.newPage();
       await p.goto(`${NOREAL}/`);
-      await p.getByTestId('mode-real').waitFor();
-      await p.waitForFunction(() => document.querySelector('[data-testid=mode-real]').getAttribute('aria-disabled') === 'true');
+      await p.getByTestId('mode-real').waitFor({ state: 'attached' });
+      await p.getByTestId('mode-real').waitFor({ state: 'attached' });
+      await p.waitForFunction(() => document.querySelector('[data-testid=mode-real]')?.disabled === true);
       expect(/SKILLS_DIR/.test(await p.getByTestId('mode-real').getAttribute('title')), 'no how-to tooltip');
-      await p.getByTestId('mode-real').click({ force: true }); // aria-disabled keeps it focusable and clickable; Playwright treats it as disabled
-      await p.getByTestId('mode-message').waitFor();
-      expect(/no skills directory configured/.test(await p.getByTestId('mode-message').textContent()), '409 reason not shown');
-      expect(await p.getByTestId('mode-mock').getAttribute('aria-pressed') === 'true', 'mode changed');
+      // A disabled option cannot be chosen: the select stays on mock and no 409 is sent.
+      expect(await p.getByTestId('mode-select').inputValue() === 'mock', 'mode stayed mock');
       await go(p, 'source');
       await p.getByTestId('no-problems').waitFor();
       await shot(p, '11-source-no-real');
@@ -330,8 +329,8 @@ try {
     const small = await browser.newContext({ viewport: { width: 375, height: 800 }, colorScheme: 'light' });
     const p = await small.newPage();
     await p.goto(`${BASE}/`);
-    await p.getByTestId('mode-real').click();
-    await p.waitForFunction(() => document.querySelector('[data-testid=mode-real]').getAttribute('aria-pressed') === 'true');
+    await p.getByTestId('mode-select').selectOption('real');
+    await p.waitForFunction(() => document.querySelector('[data-testid=mode-select]').value === 'real');
     await go(p, 'skills');
     await p.getByTestId(`skill-${LONG}`).click();
     expect((await p.getByTestId('skill-title').textContent()) === LONG, 'the long name is not shown in full');
