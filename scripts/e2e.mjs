@@ -159,6 +159,8 @@ try {
     expect(await page.getByTestId('detail-verdict').textContent() === 'PASS', 'detail verdict is not PASS');
     await page.locator('[data-testid=case-detail] [data-testid=wire] summary').first().waitFor();
     await page.locator('[data-testid=case-detail] [data-testid=wire] summary').nth(1).click();
+    // the Form | JSON choice is shared: show the JSON view so the pane holds the raw request text
+    await page.locator('[data-testid=case-detail] [data-testid=wire] details[open] [data-testid=wire-request-raw]').click();
     expect(/"jsonrpc": "2.0"/.test(await page.locator('[data-testid=case-detail] [data-testid=wire-request]').first().textContent()), 'no raw JSON-RPC request');
     expect(await page.locator('[data-testid=case-detail] [data-testid=wire] details').count() >= 4, 'too few wire entries');
     expect(/approval-revoked/.test(await page.getByTestId('case-detail').textContent()), 'finding approval-revoked not listed');

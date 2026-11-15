@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Chip from "../components/Chip.jsx";
 import Kv from "../components/Kv.jsx";
 import WireView from "../components/WireView.jsx";
+import Json from "../components/JsonPane.jsx";
 import { createBrowse, getHostile } from "../api.js";
 
 const browse = createBrowse();
@@ -103,7 +104,7 @@ export default function Skills({ info, dataKey, resetKey }) {
               <h2 className="mono wrap" data-testid="skill-title">{sel.name}</h2>
               <p><Chip tone={sel.loadable ? "ok" : "danger"}>{sel.loadable ? "loadable" : "refused"}</Chip> <Chip tone={sel.listed ? "ok" : "warn"}>{sel.listed ? "listed" : "unlisted"}</Chip> {sel.dynamic && <Chip tone="warn">dynamic</Chip>}</p>
               {!sel.loadable && <p className="field-error" data-testid="refused-reasons">Refused: {sel.reasons.join(", ")}</p>}
-              <Kv rows={[["URI", <code key="u">{sel.uri}</code>], ["Frontmatter", <pre className="code" key="f" data-testid="frontmatter">{JSON.stringify(fm, null, 2)}</pre>]]} />
+              <Kv rows={[["URI", <code key="u">{sel.uri}</code>], ["Frontmatter", <Json key="f" value={fm} label="Frontmatter" testId="frontmatter" hot={["name", "allowed-tools"]} />]]} />
               <p className="section-label">Manifest ({manifest.length} file{manifest.length === 1 ? "" : "s"})</p>
               {sel.dynamic ? <p className="muted">resources: "dynamic". There is no manifest to check files against.</p> : (
                 <div className="scroll">

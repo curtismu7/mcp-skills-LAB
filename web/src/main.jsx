@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import "@xyflow/react/dist/style.css";
 import "./styles/standalone-ui.css";
 import "./top-menu/top-menu.css";
+import "./components/JsonPane.css";
 import "./app.css";
 import App from "./App.jsx";
 
