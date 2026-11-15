@@ -5,6 +5,7 @@ import { BANNER_SIM, MEASURED } from "./banner.js";
 import { buildGraph } from "./FlowDiagram.jsx";
 import Chip from "./components/Chip.jsx";
 import WireView from "./components/WireView.jsx";
+import { setJsonView } from "./components/JsonPane.jsx";
 import { forgetWorkspace, workspaceId } from "./workspace.js";
 
 // React Flow measures the DOM, which jsdom does not have: a small stand-in that keeps node and edge state. The real library runs in the browser check (scripts/e2e.mjs).
@@ -149,6 +150,31 @@ describe("Skills tab", () => {
     render(<WireView wire={[{ seq: 1, method: "x", http: "POST", url: "/mcp", status: 200, ms: 1, traceparent: null, request: '<img src=x onerror="alert(1)">', response: "<script>alert(2)</script>" }]} />);
     const { container } = render(<Chip>{"<b>MUST</b>"}</Chip>);
     expect(document.querySelector("img")).toBeNull(); expect(document.querySelector("script")).toBeNull(); expect(container.querySelector("b")).toBeNull();
+  });
+  it("Rule 24: the frontmatter is a Form | JSON pane (Form by default, the exact JSON on the JSON button), with no scroll cap", async () => {
+    setJsonView("form");
+    render(<App />);
+    go("skills");
+    fireEvent.click(await screen.findByTestId("skill-release-checklist"));
+    const box = await screen.findByTestId("frontmatter-box");
+    expect(within(box).getByRole("button", { name: "Form" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(box).getByRole("button", { name: "JSON" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByTestId("frontmatter")).toHaveTextContent("release-checklist");
+    expect(box.querySelector('[data-hot="true"]')).not.toBeNull(); // the lab marks name as important
+    fireEvent.click(screen.getByTestId("frontmatter-raw"));
+    expect(screen.getByTestId("frontmatter").tagName).toBe("PRE");
+    expect(screen.getByTestId("frontmatter").textContent).toBe(JSON.stringify(SKILL.frontmatter, null, 2));
+    setJsonView("form");
+  });
+  it("Rule 24: a JSON wire body gets Form | JSON and keeps its exact text; a body that is not JSON stays plain text without a toggle", () => {
+    setJsonView("raw");
+    const body = '{\n  "jsonrpc": "2.0",\n  "method": "skills/list"\n}';
+    render(<WireView wire={[{ seq: 1, method: "skills/list", http: "POST", url: "/mcp", status: 200, ms: 1, traceparent: null, request: body, response: "event: message\ndata: {}" }]} />);
+    expect(screen.getByTestId("wire-request").textContent).toBe(body);
+    expect(within(screen.getByTestId("wire-request-box")).getByRole("button", { name: "JSON" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("wire-response-box")).toHaveAttribute("data-view", "text");
+    expect(within(screen.getByTestId("wire-response-box")).queryByRole("button", { name: "Form" })).toBeNull();
+    setJsonView("form");
   });
 });
 

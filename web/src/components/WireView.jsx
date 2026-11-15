@@ -1,4 +1,8 @@
+import Json from "./JsonPane.jsx";
+
 // Rule 14: the raw request and response of every hop, with its traceparent. Text only (React text nodes): nothing from the server is ever interpreted.
+// A body that is JSON gets the shared Form | JSON pane (the JSON view shows the text exactly as it came); anything else (an SSE body, a cut-off body) stays text.
+const HOT = ["method", "uri", "digest", "allowed-tools"];
 export default function WireView({ wire, empty = "No requests yet." }) {
   if (!wire?.length) return <p className="muted" data-testid="wire-empty">{empty}</p>;
   return (
@@ -11,9 +15,9 @@ export default function WireView({ wire, empty = "No requests yet." }) {
             </summary>
             <p className="muted mono">traceparent {w.traceparent ?? "none"}</p>
             <p className="section-label">Request</p>
-            <pre className="code" data-testid="wire-request">{w.request || "(no body)"}</pre>
+            <Json value={w.request || "(no body)"} label="Request" testId="wire-request" hot={HOT} />
             <p className="section-label">Response ({w.responseType || "no body"})</p>
-            <pre className="code" data-testid="wire-response">{w.response || "(no body)"}</pre>
+            <Json value={w.response || "(no body)"} label="Response" testId="wire-response" hot={HOT} />
           </details>
         </li>
       ))}
