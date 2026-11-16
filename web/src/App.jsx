@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ShelfLink from "./components/ShelfLink.jsx";
+import VerifyMark from "./components/VerifyMark.jsx";
 import TopMenu from "./top-menu/TopMenu";
 import Overview from "./pages/Overview.jsx";
 import Skills from "./pages/Skills.jsx";
@@ -88,6 +89,7 @@ export default function App() {
             onReset={onReset}
           >
             <ShelfLink headers={() => ({ "x-workspace": workspaceId() })} />
+            <VerifyMark id="mcp-skills-lab" headers={() => ({ "x-workspace": workspaceId() })} />
           </TopMenu>
         </span>
       </header>
