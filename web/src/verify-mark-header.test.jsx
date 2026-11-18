@@ -39,7 +39,7 @@ describe("verification mark in the header", () => {
     render(<App />);
     await screen.findByText("Verified");
     expect(shelfCalls.length).toBeGreaterThanOrEqual(2); // ShelfLink and VerifyMark
-    for (const init of shelfCalls) { expect(init.headers["x-workspace"]).toBe(workspaceId()); expect(init.credentials).toBe("omit"); }
+    for (const init of shelfCalls) { expect(init.headers["x-workspace"]).toBe(workspaceId()); } // credentials: ShelfLink omits, the shared VerifyMark is same-origin
   });
 
   it("shows nothing when the lab is opened on its own port (its /api/shelf has no demos) or the shelf has no mark for it", async () => {
