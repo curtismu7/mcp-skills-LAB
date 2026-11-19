@@ -15,17 +15,17 @@ export default function Overview({ info, dataKey, presenter, talk, lastVerify })
       {!presenter && <p className="intro">A tester for the official MCP Skills extension, <code>io.modelcontextprotocol/skills</code> (SEP-2640, protocol revision 2026-07-28). A skills <strong>server</strong>, a catalog of <strong>hostile</strong> servers, and a <strong>host verifier</strong> that decides what a careful host would accept.</p>}
       <div className="card-grid">
         <div className="card">
-          <h3>Skills</h3>
+          <h3><span className="step-num" aria-hidden="true">1</span>Skills</h3>
           <p>Browse what a server lists, read its manifest (size and SHA-256 per file) and open a file only when you click it. The retrieval counter stays at 0 until then.</p>
           <p><a href="#/skills">Open the Skills tab</a></p>
         </div>
         <div className="card">
-          <h3>Verifier</h3>
+          <h3><span className="step-num" aria-hidden="true">2</span>Verifier</h3>
           <p>{cases ? `Run ${cases.length} hostile cases` : "Loading the hostile cases"} in both protocol eras. Each verdict names the spec rule (MUST, SHOULD or lab policy) and the check that caught it, with the raw wire behind it.</p>
           <p><a href="#/verifier">Open the Verifier tab</a></p>
         </div>
         <div className="card">
-          <h3>Approvals</h3>
+          <h3><span className="step-num" aria-hidden="true">3</span>Approvals</h3>
           <p>Approve a skill, then scripts and allowed-tools separately. Swap the manifest underneath and watch the approval go, and stay gone.</p>
           <p><a href="#/approvals">Open the Approvals tab</a></p>
         </div>
@@ -47,7 +47,7 @@ export default function Overview({ info, dataKey, presenter, talk, lastVerify })
       </div>
       {!presenter && spec && (
         <section className="panel" aria-label="Sources">
-          <h2>Where the claims come from</h2>
+          <h2><span className="step-num" aria-hidden="true">4</span>Where the claims come from</h2>
           <ul className="sources">
             <li><a href={spec.overview} target="_blank" rel="noreferrer">Extension overview</a></li>
             <li><a href={spec.sepPage} target="_blank" rel="noreferrer">SEP-2640 page</a></li>
@@ -59,7 +59,7 @@ export default function Overview({ info, dataKey, presenter, talk, lastVerify })
       )}
       {!presenter && talk.length > 0 && (
         <section className="panel" aria-label="Talk track">
-          <h2>Talk track</h2>
+          <h2><span className="step-num" aria-hidden="true">5</span>Talk track</h2>
           <ol className="talk" data-testid="talk-track">{talk.map((t) => <li key={t.id}><h3>{t.title}</h3><p>{t.say}</p></li>)}</ol>
         </section>
       )}
