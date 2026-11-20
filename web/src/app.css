@@ -139,3 +139,6 @@ details > summary { cursor: pointer; font-weight: 700; margin: 0.5rem 0; }
 .flow-edge--now path { stroke: var(--accent); stroke-width: 4; }
 @media (max-width: 900px) { .flow { height: 380px; } }
 @media (max-width: 600px) { .flow { height: 340px; } .page-head h1 { font-size: 1.25rem; } .shell-right { gap: 0.35rem; } .chip { font-size: 0.72rem; } }
+
+/* An expanded diagram box (the shared diagram kit's Passport) is wide enough for its details. */
+.react-flow__node.dk-open { width: 320px; }

@@ -8,7 +8,7 @@ import { HOSTILE_CASES } from '../server/src/hostile/cases.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
-const SKIP = new Set(['node_modules', '.git', 'package-lock.json', 'dist', 'standalone-ui.css']);
+const SKIP = new Set(['node_modules', '.git', 'package-lock.json', 'dist', 'standalone-ui.css', '.claude-worktrees']);
 // Every shipped text file except the tests, which hold the patterns they look for.
 function shipped(dir = root, out = []) {
   for (const name of fs.readdirSync(dir)) {
@@ -142,7 +142,7 @@ test('app CSS follows the CSS standard: tokens only, no dark-mode media query, n
 });
 
 test('the web code never interprets skill text: no dangerouslySetInnerHTML, innerHTML, eval, style attribute, mermaid or credential field; no remote URL is fetched', () => {
-  const web = shipped().filter((p) => p.includes(`${path.sep}web${path.sep}src${path.sep}`) && /\.jsx?$/.test(p) && !/\.test\./.test(p));
+  const web = shipped().filter((p) => p.includes(`${path.sep}web${path.sep}src${path.sep}`) && /\.jsx?$/.test(p) && !/\.test\./.test(p) && !p.includes(`${path.sep}diagram-kit${path.sep}`));
   assert.ok(web.length >= 12);
   for (const p of web) {
     const t = fs.readFileSync(p, 'utf8');

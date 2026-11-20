@@ -1,6 +1,15 @@
 import "@testing-library/jest-dom/vitest";
 import { configure } from "@testing-library/react";
 
+// React Flow measures the DOM; jsdom has no layout, so give it the few browser APIs it reads.
+class RO { observe() {} unobserve() {} disconnect() {} }
+globalThis.ResizeObserver = globalThis.ResizeObserver || RO;
+globalThis.DOMMatrixReadOnly = globalThis.DOMMatrixReadOnly || class { constructor() { this.m22 = 1; } };
+Object.defineProperties(HTMLElement.prototype, {
+  offsetWidth: { configurable: true, get() { return 200; } },
+  offsetHeight: { configurable: true, get() { return 80; } },
+});
+
 // CI and a busy laptop can be very slow (load average 100+ was seen): wait up to 15 s for the screen instead of the 1 s default. A passing test does not wait longer.
 configure({ asyncUtilTimeout: 15000 });
 
