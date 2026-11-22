@@ -9,7 +9,54 @@ const browse = createBrowse();
 const short = (d) => (d ? d.replace("sha256:", "").slice(0, 12) : "");
 const rel = (skillUri, fileUri) => fileUri.replace(skillUri.replace(/SKILL\.md$/, ""), "");
 
+// Drag the two dividers to resize the inspector columns; widths persist.
+const INSPECTOR_KEY = "msk.inspector.cols";
+export function useInspectorResize() {
+  const onHandleDown = useCallback((e) => {
+    e.preventDefault();
+    const layout = e.target.closest(".inspector");
+    const side = e.target.dataset.side;
+    const rect = layout.getBoundingClientRect();
+    const move = (ev) => {
+      if (side === "left") {
+        const w = Math.min(Math.max(ev.clientX - rect.left, 140), rect.width * 0.35);
+        layout.style.setProperty("--tree-w", `${w}px`);
+      } else {
+        const w = Math.min(Math.max(rect.right - ev.clientX, 240), rect.width * 0.45);
+        layout.style.setProperty("--out-w", `${w}px`);
+      }
+    };
+    const up = () => {
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      const cs = getComputedStyle(layout);
+      try {
+        localStorage.setItem(INSPECTOR_KEY, JSON.stringify({
+          tree: parseFloat(cs.getPropertyValue("--tree-w")) || undefined,
+          out: parseFloat(cs.getPropertyValue("--out-w")) || undefined,
+        }));
+      } catch { /* no storage */ }
+    };
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up, { once: true });
+  }, []);
+  return onHandleDown;
+}
+
 export default function Skills({ info, dataKey, resetKey }) {
+  const onHandleDown = useInspectorResize();
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(INSPECTOR_KEY) || "null");
+      if (!saved) return;
+      const el = document.querySelector(".inspector");
+      if (!el) return;
+      if (saved.tree) el.style.setProperty("--tree-w", `${saved.tree}px`);
+      if (saved.out) el.style.setProperty("--out-w", `${saved.out}px`);
+    } catch { /* none */ }
+  }, []);
   const [cases, setCases] = useState([]);
   const [target, setTarget] = useState("catalog");
   const [era, setEra] = useState("modern");
@@ -97,6 +144,7 @@ export default function Skills({ info, dataKey, resetKey }) {
             </button>
           ))}
         </nav>
+        <div className="col-handle" role="separator" aria-orientation="vertical" aria-label="Resize skill list" data-side="left" onPointerDown={onHandleDown} />
         <section className="panel" aria-label="Skill">
           {!sel && <p className="muted">Select a skill.</p>}
           {sel && (
@@ -128,6 +176,7 @@ export default function Skills({ info, dataKey, resetKey }) {
             </>
           )}
         </section>
+        <div className="col-handle" role="separator" aria-orientation="vertical" aria-label="Resize output panel" data-side="right" onPointerDown={onHandleDown} />
         <section className="panel output-panel" aria-label="Skill output">
           {!sel && <p className="muted">Nothing read yet. View a manifest file or press Activate.</p>}
           {sel && (
