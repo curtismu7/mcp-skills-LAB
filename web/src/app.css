@@ -59,7 +59,9 @@ h2 { font-size: 1.1rem; }
 @media (max-width: 600px) { .kv__row { grid-template-columns: 1fr; gap: 0; } }
 
 /* 6. Inspector: tree + panel */
-.inspector { display: grid; grid-template-columns: 220px minmax(0, 1fr) minmax(0, 1.2fr); gap: 0.75rem; margin: 1rem 0; }
+.inspector { display: grid; grid-template-columns: var(--tree-w, 220px) 6px minmax(0, 1fr) 6px var(--out-w, 52%) ; gap: 0.75rem; margin: 1rem 0; }
+.col-handle { width: 6px; min-height: 4rem; border-radius: 3px; background: var(--border); cursor: col-resize; touch-action: none; }
+.col-handle:hover, .col-handle[data-dragging="1"] { background: var(--muted); }
 .tree { display: grid; gap: 0.25rem; align-content: start; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); min-width: 0; }
 .tree button { text-align: left; font-weight: 500; overflow-wrap: anywhere; }
 .panel { padding: 0.9rem 1rem; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); margin: 0; min-width: 0; }
@@ -67,7 +69,7 @@ h2 { font-size: 1.1rem; }
 .output-panel .byuri { margin-top: 0.75rem; display: grid; gap: 0.25rem; }
 .output-panel button[data-testid="get-by-uri"] { justify-self: start; }
 .panel h2 { margin-top: 0; }
-@media (max-width: 900px) { .inspector { grid-template-columns: 1fr 1fr; } .tree { grid-column: 1 / -1; grid-auto-flow: column; } }
+@media (max-width: 900px) { .inspector { grid-template-columns: 1fr 1fr; } .tree { grid-column: 1 / -1; grid-auto-flow: column; } .col-handle { display: none; } }
 @media (max-width: 600px) { .inspector { grid-template-columns: minmax(0, 1fr); } .tree { grid-auto-flow: row; } }
 
 /* 7. Status chips: semantic tokens and always a word */
